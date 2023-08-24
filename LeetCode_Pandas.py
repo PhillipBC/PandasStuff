@@ -106,8 +106,102 @@ def valid_emails(users: pd.DataFrame) -> pd.DataFrame:
 
     return users[users['mail'].str.match(r'^[A-Za-z][A-Za-z0-9_\.\-]*@leetcode(\?com)?\.com$')]
 
+def find_patients(patients: pd.DataFrame) -> pd.DataFrame:
+    # use Regex again
+    # str.contains() checks if the string contains the value
+    # r'\bDIAB1' checks for the regular expression containing DIAB1
+    # \b ensures it is the beginning of a word essentially
+    return patients[patients['conditions'].str.contains(r'\bDIAB1')]
 
+def nth_highest_salary_slow(employee: pd.DataFrame, N: int) -> pd.DataFrame:
+    sals = employee['salary'].unique()
+    if len(sals)<N:
+        return pd.DataFrame({'Nth Highest Salary': [None]})
+    else:
+       employee = employee.sort_values(by='salary', ascending=False)
+       employee = employee.drop_duplicates(subset=['salary'])
+       print(employee)
+       return employee.iloc[N-1:N][['salary']]
+    
+def nth_highest_salary(employee: pd.DataFrame, N: int) -> pd.DataFrame:
+    # Extract salary column and remove duplicate values
+    employee = employee['salary'].drop_duplicates()
+    # Then sort the array by descending 'salary' values
+    employee = employee.sort_values(ascending=False)
 
+    # if N > num of unique salarys
+    if N > len(employee):
+        # return error as required
+        return pd.DataFrame({'Nth Highest Salary': [None]})
+    #print(employee)
+    # Otherwise, return the Nth highest as a dataframe
+    return pd.DataFrame({'Nth Highest Salary': [employee.iloc[N-1]]})
 
+def second_highest_salary(employee: pd.DataFrame) -> pd.DataFrame:
+    # Extract salary column and remove duplicate values
+    sals = employee.salary.unique()
+    if len(sals) < 2:
+        # return error as required
+        return pd.DataFrame({'SecondHighestSalary': [None]})
+    else:
+        # Then sort the array by descending 'salary' values
+        # and take out second value (at index 1)
+        sals = sorted(sals, reverse=True)[1] 
+        return pd.DataFrame({'SecondHighestSalary': [sals]})
 
+def department_highest_salary(employee: pd.DataFrame, department: pd.DataFrame) -> pd.DataFrame:
+    # Merge the DFs employee and department into one dataframe, merging on the departmentId and id keys
+    all_df = employee.merge(department, left_on='departmentId', right_on='id', suffixes=('_employee','_department'))
+    #print(all_df)
+    # Group the merged table into sets of employees with matching departmentId
+    # Then apply a 'lambda' function : filter out maximum salary values from each group
+    sal_df = all_df.groupby('departmentId').apply(lambda x: x[x.salary == x.salary.max()])
+    #print(sal_df)
+    # now de-group the dataframe -> Unnecesary for the answer to be extracted
+    #sal_df = sal_df.reset_index(drop=True)
+    #print(sal_df)
+    # Now pick out the columns we want and rename them
+    sal_df = sal_df[['name_department', 'name_employee', 'salary']]
+    sal_df.columns = ['Department','Employee', 'Salary']
+    return sal_df
+
+def order_scores_manual(scores: pd.DataFrame) -> pd.DataFrame:
+    # Sort by the 'score' in decreasing order
+    # and reset the index, so that accessing the DF at index j corresponds to the jth index in the sorted DF
+    scores = scores.sort_values(by='score', ascending=False).reset_index(drop = True)
+    #print(scores)
+    
+    # storing ranks, start with rank 1
+    rank = [1]*len(scores)
+    # keep track of previous score
+    score = scores.score[0]
+    # loop over scores starting from second, already know the first is top rank
+    for j in range(1,len(scores)):
+        # current score
+        c_score = scores.score[j]
+        #print("Current score ",c_score)
+        if c_score != score: # if not equal to the previous score
+            # then it is the next rank
+            rank[j] = rank[j-1]+1
+            # update previous score value
+            score = c_score
+        else:
+            # if same score as previous
+            # rank is the same as previous
+            rank[j] = rank[j-1]
+    # add the ranks to the DF
+    scores['rank'] = rank
+    # return the relevant columns of the DF
+    return scores[['score','rank']]
+
+def order_scores(scores: pd.DataFrame) -> pd.DataFrame:
+    if len(scores) == 0:
+        return pd.DataFrame({'score': [], 'rank' : []})
+
+    # Assign a new column named rank, using the rank method to assign a rank to the score values
+    # method = 'dense' ensures that ties result in equal ranks, and ranks are not skipped
+    scores['rank'] = scores['score'].rank(method='dense', ascending=False)
+
+    # Now simply return the table as required
+    return scores[['score','rank']].sort_values(by='score',ascending=False)
 
