@@ -285,3 +285,53 @@ def count_salary_categories(accounts: pd.DataFrame) -> pd.DataFrame:
     sals[2] = len(accounts[(accounts.income <= 50000) & (accounts.income >= 20000)]) # avg
 
     return pd.DataFrame({'category': ['High Salary','Low Salary','Average Salary'], 'accounts_count' : sals})
+
+# Data Aggregation
+
+def total_time(employees: pd.DataFrame) -> pd.DataFrame:
+    # Add a new column that contains the time spent in the office, as the difference of out and in time
+    employees['total_time'] = employees['out_time'] - employees['in_time']
+
+    # Because employees can have multiple entries in the table, we will group the table into 
+    # employee IDs and find the sum within each group, and remembering to reset the index
+    employees = employees.groupby(['emp_id','event_day'])['total_time'].sum().reset_index()
+    print(employees)
+    # rename the day column
+    employees.rename(columns={'event_day': 'day'}, inplace=True)
+    return employees
+
+def game_analysis(activity: pd.DataFrame) -> pd.DataFrame:
+    # We will sort the frame by player_id and by the event_date
+    activity = activity.sort_values(by=['player_id','event_date'])
+    # Now group into player_ids and select the earliest date from each group using min()
+    # remembering to reset the index so we get a DF instead of a series
+    activity = activity.groupby('player_id')['event_date'].min().reset_index()
+    # then just rename the column and return
+    activity.rename(columns={'event_date': 'first_login'},inplace=True)
+    #print(activity)
+    return activity
+
+def count_unique_subjects(teacher: pd.DataFrame) -> pd.DataFrame:
+    # group teachers by teacher_id
+    # then use nunique to count the number of unique subjects they teach
+    # again remembering to reset the index to get a DF
+    teacher = teacher.groupby('teacher_id')['subject_id'].nunique().reset_index()
+    #print(teacher)
+    teacher.rename(columns={'subject_id': 'cnt'}, inplace=True)
+    return teacher
+
+def find_classes(courses: pd.DataFrame) -> pd.DataFrame:
+    # Group by class, and count the number of students per class
+    classes = courses.groupby('class')['student'].count().reset_index()
+    #print(classes)
+    # Then filter to classes with at least 5 students
+    classes = classes[classes.student >= 5]
+    return classes[['class']]
+
+def largest_orders(orders: pd.DataFrame) -> pd.DataFrame:
+    # Group by customer number
+    res = orders.groupby('customer_number')['order_number'].count().reset_index()
+    # now pick out the customer with highest number of orders
+    res = res[res.order_number == res.order_number.max()]
+    #print(res)
+    return res[['customer_number']]
