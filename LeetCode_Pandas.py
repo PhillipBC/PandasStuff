@@ -1,5 +1,7 @@
 import pandas as pd
 
+# Data Filtering
+
 def big_countries(world: pd.DataFrame) -> pd.DataFrame:
     # access the column via DF['key']
     # | is the or operator (like || in julia)
@@ -30,6 +32,8 @@ def article_views(views: pd.DataFrame) -> pd.DataFrame:
     
     # return a new df with just ids
     return pd.DataFrame({'id':ids})
+
+# String Methods
 
 def invalid_tweets(tweets: pd.DataFrame) -> pd.DataFrame:
     res = tweets[tweets['content'].str.len() > 15]
@@ -112,6 +116,8 @@ def find_patients(patients: pd.DataFrame) -> pd.DataFrame:
     # r'\bDIAB1' checks for the regular expression containing DIAB1
     # \b ensures it is the beginning of a word essentially
     return patients[patients['conditions'].str.contains(r'\bDIAB1')]
+
+# Data Manipulation
 
 def nth_highest_salary_slow(employee: pd.DataFrame, N: int) -> pd.DataFrame:
     sals = employee['salary'].unique()
@@ -238,3 +244,44 @@ def rearrange_products_table_stack(products: pd.DataFrame) -> pd.DataFrame:
     # rename columns
     products.columns = ['product_id','store','price']
     return pd.DataFrame(products)
+
+# STATISTICS 
+
+def count_rich_customers(store: pd.DataFrame) -> pd.DataFrame:
+    # filter the df to only bills greater than 500
+    store = store[store.amount > 500]
+    #print(store)
+    # then use .nunique to count the number of unique elements in the customer_id column
+    res = store.customer_id.nunique()
+
+    return pd.DataFrame({'rich_count': [res]})
+
+def food_delivery(delivery: pd.DataFrame) -> pd.DataFrame:
+    # total number of orders
+    total = len(delivery.order_date)
+
+    immediate = delivery[(delivery.order_date == delivery.customer_pref_delivery_date)]
+    #print(immediate)
+    res = round(100*len(immediate.order_date)/total,2)
+
+    return pd.DataFrame({'immediate_percentage': [res]})
+
+def count_salary_categories_loop(accounts: pd.DataFrame) -> pd.DataFrame:
+    lsal, asal, hsal = 0, 0, 0
+    for j in range(len(accounts)):
+        if accounts.income[j] > 50000:
+            hsal += 1
+        elif accounts.income[j] < 20000:
+            lsal += 1
+        else:
+            asal += 1
+    return pd.DataFrame({'category': ['High Salary','Low Salary','Average Salary'], 'accounts_count' : [hsal,lsal,asal]})
+
+def count_salary_categories(accounts: pd.DataFrame) -> pd.DataFrame:
+    sals = [0]*3 # high, low, avg
+
+    sals[0] = len(accounts[accounts.income > 50000]) # high
+    sals[1] = len(accounts[accounts.income < 20000]) # low
+    sals[2] = len(accounts[(accounts.income <= 50000) & (accounts.income >= 20000)]) # avg
+
+    return pd.DataFrame({'category': ['High Salary','Low Salary','Average Salary'], 'accounts_count' : sals})
