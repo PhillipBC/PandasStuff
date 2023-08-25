@@ -205,3 +205,36 @@ def order_scores(scores: pd.DataFrame) -> pd.DataFrame:
     # Now simply return the table as required
     return scores[['score','rank']].sort_values(by='score',ascending=False)
 
+# Modify Person in place
+def delete_duplicate_emails(person: pd.DataFrame) -> None:
+    # Question requires everything be done inplace
+    # i.e. we update the DF inplace
+    # This is done by using inplace=True in most function calls
+
+    # Sort the DF inplace by id in ascending order
+    person.sort_values(by='id',ascending=True,inplace=True)
+    # Then drop duplicate emails from the table, keep the first one encountered
+    # as the elements are sorted by id values
+    person.drop_duplicates(subset='email', keep='first', inplace=True)
+
+def rearrange_products_table(products: pd.DataFrame) -> pd.DataFrame:
+    # Melt essentially unfolds a multicolumn table
+    # id_vars pickst the 'pivot' values to unfold around
+    # it essentially makes a new row for the pivot values for each other column in the table
+    # var_name assigns the column name that will store the old column names
+    # val_name assigns the column name that will store the values from those columns
+    # lastly we drop null values
+    return pd.melt(products, id_vars='product_id', var_name='store', value_name='price').dropna()   
+
+def rearrange_products_table_stack(products: pd.DataFrame) -> pd.DataFrame:
+    # Setting the index and then stacking works similarly to melt
+    
+    # set product_id as the index, preparing for stacking stores
+    products.set_index('product_id', inplace=True)
+
+    # stack stores
+    products = products.stack(dropna=True).reset_index()
+
+    # rename columns
+    products.columns = ['product_id','store','price']
+    return pd.DataFrame(products)
