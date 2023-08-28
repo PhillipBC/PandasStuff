@@ -335,3 +335,28 @@ def largest_orders(orders: pd.DataFrame) -> pd.DataFrame:
     res = res[res.order_number == res.order_number.max()]
     #print(res)
     return res[['customer_number']]
+
+def categorize_products(activities: pd.DataFrame) -> pd.DataFrame:
+    # Group by sell_date
+    # now use .agg to call multiple functions at once
+    # Count number of unique products (nunique), and append the string name using a lambda function
+    # remembering to reset the index
+    res = activities.groupby('sell_date')['product'].agg( ['nunique', lambda x: ','.join(sorted(set(x)))] ).reset_index()
+    
+    # rename columns
+    res.columns = ['sell_date','num_sold','products']
+    
+    return res
+
+def daily_leads_and_partners(daily_sales: pd.DataFrame) -> pd.DataFrame:
+    # use group by both date_id and make_name
+    # then use .agg to call nunique on both groups
+    # remembering to reset the index
+    #res = daily_sales.groupby(['date_id','make_name']).agg({'lead_id':'nunique', 'partner_id':'nunique'}).reset_index()
+    # or just call nunique on two columns
+    res = daily_sales.groupby( ['date_id', 'make_name']).nunique().reset_index()
+
+    # rename the columns
+    res.columns = ['date_id', 'make_name', 'unique_leads','unique_partners']
+    return res
+
