@@ -360,3 +360,61 @@ def daily_leads_and_partners(daily_sales: pd.DataFrame) -> pd.DataFrame:
     res.columns = ['date_id', 'make_name', 'unique_leads','unique_partners']
     return res
 
+# Data Integration
+
+def actors_and_directors(actor_director: pd.DataFrame) -> pd.DataFrame:
+    res = actor_director.groupby(['actor_id', 'director_id']).count().reset_index()
+    res = res[res.timestamp >= 3]#.rename(columns={'timestamp': 'cooperation_count'})
+    #res.rename(columns={'timestamp': 'cooperation_count'}, inplace=True)
+    # Dont need to rename column, but could
+    return res[['actor_id','director_id']]
+
+def replace_employee_id(employees: pd.DataFrame, employee_uni: pd.DataFrame) -> pd.DataFrame:
+    # merge tables into one, pivot about the id
+    #res = employees.merge(employee_uni, left_on='id', right_on='id') # this does NOT put in nulls
+    res = pd.merge(employees, employee_uni, how='left', on='id') # this puts in nulls
+    return res[['unique_id', 'name']]
+
+def students_and_examinations(students: pd.DataFrame, subjects: pd.DataFrame, examinations: pd.DataFrame) -> pd.DataFrame:
+    # Count number of number of exams for each subject for each student
+    # using agg to do the count, and name the count column
+    examinations = examinations.groupby(['student_id','subject_name']).agg(attended_exams=('subject_name', 'count')).reset_index()
+    
+    # now merge the students and subjects table, join via cross
+    students = students.merge(subjects, how='cross')
+
+    # now merge this with the examinations table, right keeps keys from the right frame, i.e. students
+    examinations = examinations.merge(students, on=['student_id', 'subject_name'], how='right')
+    # Replace null values with 0
+    examinations = examinations.fillna(0)
+    
+    # sorting by 'student_id', 'subject_name'
+    examinations = examinations.sort_values(['student_id', 'subject_name'])
+
+    return examinations[['student_id', 'student_name', 'subject_name', 'attended_exams']]
+
+def find_managers(employee: pd.DataFrame) -> pd.DataFrame:
+    # Group employees by managerId, and count the number of things in the group, 
+    # and store under new column 'directReports'
+    res = employee.groupby('managerId')['id'].count().reset_index(name='counts')
+    # now filter to employees with a count of at least 5 
+    res = res[res.counts >= 5].reset_index()
+
+    # now merge this table with the employee table to identify the name of the managers with >=5
+    #res = res.merge(employee[['id','name']], left_on='managerId', right_on='id')
+    # return just the names
+    #return res[['name']]
+
+    # instead of merge, can just filter employee table to those that are in res
+    employee = employee[(employee.id).isin(res.managerId)]
+    return employee[['name']]
+
+def sales_person(sales_person: pd.DataFrame, company: pd.DataFrame, orders: pd.DataFrame) -> pd.DataFrame:
+    # find com_id for 'RED' in company table
+    company = company[company.name == 'RED']
+    # filter orders to those with com_id == comp, i.e. RED
+    orders = orders[(orders.com_id).isin(company.com_id)]
+    # then filters sales_persons to those who DO NOT appear in this table ( using ~ to negate .isin() )
+    sales_person = sales_person[~(sales_person.sales_id).isin(orders.sales_id)]
+    # then return just the names
+    return sales_person[['name']]
